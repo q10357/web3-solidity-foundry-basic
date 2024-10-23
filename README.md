@@ -1,6 +1,9 @@
 # SimpleStorage
 
-This is a simple Solidity contract that stores a single uint256 value.
+Learning Solidity to hopefully start of my web3 dev journey 🚀
+
+The course is found here: https://updraft.cyfrin.io/
+Great material + completely free ✨
 
 ## Getting Started
 
