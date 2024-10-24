@@ -10,7 +10,7 @@ contract FundMeTest is Test {
 
     function setUp() external {
         // This is run before each test function
-        fundMe = new FundMe();
+        fundMe = new FundMe(0x694AA1769357215DE4FAC081bf1f309aDC325306);
     }
 
     function testMinimumDollarIsFive() public view {
@@ -19,6 +19,11 @@ contract FundMeTest is Test {
 
     function testOwnerIsMsgSender() public view {
         assertEq(fundMe.i_owner(), address(this));
+    }
+
+    function testPriceFeedVersionIsAccurate() public view {
+        uint256 version = fundMe.getVersion();
+        assertEq(version, 4);
     }
 }
 
