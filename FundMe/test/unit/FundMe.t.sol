@@ -3,12 +3,13 @@
 pragma solidity ^0.8.18;
 
 import {Test, console} from "forge-std/Test.sol";
-import {FundMe} from "../src/FundMe.sol";
-import {DeployFundMe} from "../script/DeployFundMe.s.sol";
+import {FundMe} from "../../src/FundMe.sol";
+import {DeployFundMe} from "../../script/DeployFundMe.s.sol";
 
 contract FundMeTest is Test {
     uint256 public constant SEND_VALUE = 0.1 ether;
     uint256 public constant STARTING_BALANCE = 10 ether;
+    uint256 public constant GAS_PRICE = 1;
 
     FundMe fundMe;
     address iz = makeAddr("iz");
@@ -72,10 +73,18 @@ contract FundMeTest is Test {
         uint256 startingFundMeBalance = address(fundMe).balance;
         uint startingOwnerBalance = fundMe.getOwner().balance;
 
+        vm.txGasPrice(GAS_PRICE);
+        uint256 gasStart = gasleft();
+
         vm.startPrank(fundMe.getOwner());
         fundMe.withdraw();
         vm.stopPrank();
 
+        uint256 gasEnd = gasleft();
+        uint256 gasUsed = (gasStart - gasEnd) * tx.gasprice;
+        console.log("Gas used: ", gasUsed);
+
+        // Assert
         uint256 endingFundMeBalance = address(fundMe).balance;
         uint endingOwnerBalance = fundMe.getOwner().balance;
 
@@ -104,6 +113,15 @@ contract FundMeTest is Test {
         assert(startingFundMeBalance + startingOwnerBalance == fundMe.getOwner().balance);
         assert((numberOfFunders) * SEND_VALUE == fundMe.getOwner().balance - startingOwnerBalance);
 
+    }
+
+    function testPrintStorageData() public view {
+        for (uint256 i = 0; i < 3; i++) {
+            bytes32 value = vm.load(address(fundMe), bytes32(i));
+            console.log("Vaule at location", i, ":");
+            console.logBytes32(value);
+        }
+        console.log("PriceFeed address:", address(fundMe.getPriceFeed()));
     }
 }
 
