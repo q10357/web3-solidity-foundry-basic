@@ -37,9 +37,4 @@ contract Raffle {
 
     // for system to pick winner
     function pickWinner() public {}
-
-    /* Getters */
-    function getEntranceFee() public view returns (uint256) {
-        return i_entranceFee;
-    }
 }
