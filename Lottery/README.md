@@ -1,20 +1,27 @@
-# Proveably Random Raffle Contracts
+# Proveably Random Raffle Contract
 
-## About
+## Overview
+A smart contract that facilitates a fair and random raffle system on the Ethereum blockchain using Chainlink VRF for randomness and Chainlink Automation for regular draws.
 
-This code is to create a proveably random smart contract lottery.
+## Features
+- Users can join the raffle by paying an entry fee.
+- Automatic winner selection based on a set interval.
+- Chainlink VRF ensures verifiable randomness.
+- Chainlink Automation triggers the draw at regular intervals.
 
-## What we want it to do?
+## Contract Details
+### `Raffle.sol`
+Manages raffle entries, winner selection, and prize distribution.
 
-1. Users should be able to enter the raffle by paying for a ticket. The ticket fees are going to be the prize the winner receives.
-2. The lottery should automatically and programmatically draw a winner after a certain period.
-3. Chainlink VRF should generate a provably random number.
-4. Chainlink Automation should trigger the lottery draw regularly.
+### Key Components
+- **Errors**: Custom errors for insufficient ETH, transfer failures, and closed raffles.
+- **State Variables**: Entrance fee, participants, recent winner, etc.
+- **Events**: `EnteredRaffle`, `WinnerPicked`.
 
-## Includes
+## Usage
+1. **Enter the Raffle**: Call `enterRaffle()` with the entry fee.
+2. **Pick Winner**: Triggered by Chainlink Automation or manually.
 
-### Contracts
-
-#### Raffle.sol
-
-Accepts payments from players, adding them to the pool of players. This is the pool from which a winner is chosen.
+## Security
+- Uses Chainlink VRF for fairness.
+- State updates before external calls to prevent reentrancy.
