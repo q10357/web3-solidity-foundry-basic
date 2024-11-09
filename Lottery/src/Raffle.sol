@@ -31,9 +31,14 @@ import "forge-std/console.sol";
 
 contract Raffle is VRFConsumerBaseV2Plus {
     /* Errors */
-    error Raffle_NotEnoughEthSent();
+    /// @notice Thrown when the ETH sent is insufficient to participate in the raffle.
+    error Raffle_InsufficientETHSent();
+
+    /// @notice Thrown when the transfer of funds fails during the raffle.
     error Raffle_TransferFailed();
-    error Raffle_RaffleNotOpen();
+
+    /// @notice Thrown when an attempt is made to join or execute the raffle while it is not open.
+    error Raffle_NotOpen();
 
     /* Type Declarations */
     enum RaffleState {
@@ -90,11 +95,11 @@ contract Raffle is VRFConsumerBaseV2Plus {
     // for users to enter
     function enterRaffle() external payable {
         // require(msg.value >= i_entranceFee;, "Not enough ETH!");
-        if (msg.value < i_entranceFee) revert Raffle_NotEnoughEthSent();
+        if (msg.value < i_entranceFee) revert Raffle_InsufficientETHSent();
         s_players.push(payable(msg.sender));
         emit EnteredRaffle(msg.sender);
 
-        if (s_raffleState != RaffleState.OPEN) revert Raffle_RaffleNotOpen();
+        if (s_raffleState != RaffleState.OPEN) revert Raffle_NotOpen();
     }
 
     // for system to pick winner
