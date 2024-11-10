@@ -6,6 +6,8 @@ import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/VRFCo
 import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
 import "forge-std/console.sol";
 
+import {AutomationCompatibleInterface} from "@chainlink/contracts@1.2.0/src/v0.8/automation/AutomationCompatible.sol";
+
 // Layout of the contract file:
 // version
 // imports
@@ -29,7 +31,7 @@ import "forge-std/console.sol";
 // private
 // view & pure functions
 
-contract Raffle is VRFConsumerBaseV2Plus {
+contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
     /* Errors */
     /// @notice Thrown when the ETH sent is insufficient to participate in the raffle.
     error Raffle_InsufficientETHSent();
@@ -39,6 +41,13 @@ contract Raffle is VRFConsumerBaseV2Plus {
 
     /// @notice Thrown when an attempt is made to join or execute the raffle while it is not open.
     error Raffle_NotOpen();
+
+    //// @notice Thrown when performUpkeep is called but the upkeep is not needed.
+    error Raffle__UpkeepNotNeeded(
+        uint256 currentBalance,
+        uint256 numPlayers,
+        uint256 raffleState
+    );
 
     /* Type Declarations */
     enum RaffleState {
@@ -54,7 +63,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
     // The gas lane to use, which specifies the maximum gas price to bump to.
     // For a list of available gas lanes on each network,
     // see https://docs.chain.link/vrf/v2-5/supported-networks#configurations
-    bytes32 private immutable i_keyhash =
+    bytes32 private immutable i_gasLane =
         0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae;
     // SubscriptionID of your chainlink VRF subscription
     uint256 private immutable i_subscriptionId;
@@ -84,7 +93,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
     ) VRFConsumerBaseV2Plus(vrfCoordinator) {
         i_entranceFee = entranceFee;
         i_interval = interval;
-        i_keyhash = gasLane;
+        i_gasLane = gasLane;
         i_subscriptionId = subscriptionId;
         i_callbackGasLimit = callbackGasLimit;
 
@@ -114,7 +123,38 @@ contract Raffle is VRFConsumerBaseV2Plus {
         // Will revert if subscription is not set and funded.
         uint256 requestId = s_vrfCoordinator.requestRandomWords(
             VRFV2PlusClient.RandomWordsRequest({
-                keyHash: i_keyhash,
+                keyHash: i_gasLane,
+                subId: i_subscriptionId,
+                requestConfirmations: REQUEST_CONFIRMATIONS,
+                callbackGasLimit: i_callbackGasLimit,
+                numWords: NUM_WORDS,
+                extraArgs: VRFV2PlusClient._argsToBytes(
+                    // Set nativePayment to true to pay for VRF requests with Sepolia ETH instead of LINK
+                    VRFV2PlusClient.ExtraArgsV1({nativePayment: false})
+                )
+            })
+        );
+    }
+    // 1. Get a random number
+    // 2. Use the random number to pick a player
+    // 3. Automatically called
+    function performUpkeep(bytes calldata /* performData */) external override {
+        // Chainlink node may call function, as well as anyone else
+        // For security reasons, we ensure that the upkeep is needed
+        (bool upkeepNeeded, ) = checkUpkeep("");
+        // require(upkeepNeeded, "Upkeep not needed");
+        if (!upkeepNeeded) {
+            revert Raffle__UpkeepNotNeeded(
+                address(this).balance,
+                s_players.length,
+                uint256(s_raffleState)
+            );
+        }
+        s_raffleState = RaffleState.CALCULATING;
+
+        uint256 requestId = s_vrfCoordinator.requestRandomWords(
+            VRFV2PlusClient.RandomWordsRequest({
+                keyHash: i_gasLane,
                 subId: i_subscriptionId,
                 requestConfirmations: REQUEST_CONFIRMATIONS,
                 callbackGasLimit: i_callbackGasLimit,
@@ -141,6 +181,8 @@ contract Raffle is VRFConsumerBaseV2Plus {
         bool timePassed = ((block.timestamp - s_lastTimeStamp) >= i_interval);
         bool hasPlayers = s_players.length > 0;
         bool hasBalance = address(this).balance > 0;
+
+        // All is true => upkeep is needed => call performUpKeep
         upkeepNeeded = (timePassed && isOpen && hasBalance && hasPlayers);
         return (upkeepNeeded, "0x0");
     }
