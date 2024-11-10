@@ -127,6 +127,24 @@ contract Raffle is VRFConsumerBaseV2Plus {
         );
     }
 
+    /**
+     * @dev This is the function that the Chainlink Keeper nodes call
+     * they look for `upkeepNeeded` to return True.
+     * If it returns True, `performUpkeep` is called
+     * => Winner is picked and balance is sent to cette winner
+     * NB: Parameter checkData is not used in this contract
+     **/
+    function checkUpkeep(
+        bytes memory /* checkData */
+    ) public view returns (bool upkeepNeeded, bytes memory /* performData */) {
+        bool isOpen = RaffleState.OPEN == s_raffleState;
+        bool timePassed = ((block.timestamp - s_lastTimeStamp) >= i_interval);
+        bool hasPlayers = s_players.length > 0;
+        bool hasBalance = address(this).balance > 0;
+        upkeepNeeded = (timePassed && isOpen && hasBalance && hasPlayers);
+        return (upkeepNeeded, "0x0");
+    }
+
     function fulfillRandomWords(
         uint256 requestId,
         uint256[] calldata randomWords
