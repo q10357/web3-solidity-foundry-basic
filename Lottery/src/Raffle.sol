@@ -111,30 +111,6 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
         if (s_raffleState != RaffleState.OPEN) revert Raffle_NotOpen();
     }
 
-    // for system to pick winner
-    function pickWinner() external {
-        // has enough time passed?
-        if (block.timestamp - s_lastTimeStamp < i_interval) {
-            revert("Not enough time passed");
-        }
-
-        s_raffleState = RaffleState.CALCULATING;
-
-        // Will revert if subscription is not set and funded.
-        uint256 requestId = s_vrfCoordinator.requestRandomWords(
-            VRFV2PlusClient.RandomWordsRequest({
-                keyHash: i_gasLane,
-                subId: i_subscriptionId,
-                requestConfirmations: REQUEST_CONFIRMATIONS,
-                callbackGasLimit: i_callbackGasLimit,
-                numWords: NUM_WORDS,
-                extraArgs: VRFV2PlusClient._argsToBytes(
-                    // Set nativePayment to true to pay for VRF requests with Sepolia ETH instead of LINK
-                    VRFV2PlusClient.ExtraArgsV1({nativePayment: false})
-                )
-            })
-        );
-    }
     // 1. Get a random number
     // 2. Use the random number to pick a player
     // 3. Automatically called
