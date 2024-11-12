@@ -6,7 +6,7 @@ import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/VRFCo
 import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
 import "forge-std/console.sol";
 
-import {AutomationCompatibleInterface} from "@chainlink/contracts@1.2.0/src/v0.8/automation/AutomationCompatible.sol";
+import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
 
 // Layout of the contract file:
 // version
@@ -31,7 +31,7 @@ import {AutomationCompatibleInterface} from "@chainlink/contracts@1.2.0/src/v0.8
 // private
 // view & pure functions
 
-contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
+contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     /* Errors */
     /// @notice Thrown when the ETH sent is insufficient to participate in the raffle.
     error Raffle_InsufficientETHSent();
