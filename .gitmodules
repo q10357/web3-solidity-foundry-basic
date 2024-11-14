@@ -15,3 +15,6 @@
 [submodule "Lottery/lib/chainlink-brownie-contracts"]
 	path = Lottery/lib/chainlink-brownie-contracts
 	url = https://github.com/smartcontractkit/chainlink-brownie-contracts
+[submodule "lottery/lib/chainlink-brownie-contracts"]
+	path = lottery/lib/chainlink-brownie-contracts
+	url = https://github.com/smartcontractkit/chainlink-brownie-contracts
