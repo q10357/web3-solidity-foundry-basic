@@ -6,7 +6,7 @@ import {Script} from "forge-std/Script.sol";
 import {Raffle} from "../src/Raffle.sol";
 import {HelperConfig} from "./HelperConfig.s.sol";
 
-// This script deploys the raffle contract
+// Call this script to trigger deployment of the raffle contract
 contract DeployRaffle is Script {
     function run() external {
         DeployContract();
