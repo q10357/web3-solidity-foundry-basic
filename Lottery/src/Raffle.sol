@@ -43,13 +43,16 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     error Raffle_NotOpen();
 
     //// @notice Thrown when performUpkeep is called but the upkeep is not needed.
-    error Raffle__UpkeepNotNeeded(uint256 currentBalance, uint256 numPlayers, uint256 raffleState);
+    error Raffle__UpkeepNotNeeded(
+        uint256 currentBalance,
+        uint256 numPlayers,
+        uint256 raffleState
+    );
 
     /* Type Declarations */
     enum RaffleState {
         OPEN, // 0
         CALCULATING // 1
-
     }
 
     /* State Variables */
@@ -60,11 +63,11 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     // The gas lane to use, which specifies the maximum gas price to bump to.
     // For a list of available gas lanes on each network,
     // see https://docs.chain.link/vrf/v2-5/supported-networks#configurations
-    bytes32 private immutable i_gasLane = 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae;
+    bytes32 private immutable i_gasLane;
     // SubscriptionID of your chainlink VRF subscription
     uint256 private immutable i_subscriptionId;
     // Kaximum amount of gas to allow the callback to use
-    uint32 private immutable i_callbackGasLimit = 40000;
+    uint32 private immutable i_callbackGasLimit;
     // Entrance fee to join the raffle
     uint256 private immutable i_entranceFee;
     // Required time to elapse between consecutive winners (in seconds)
@@ -110,13 +113,17 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     // 1. Get a random number
     // 2. Use the random number to pick a player
     // 3. Automatically called
-    function performUpkeep(bytes calldata /* performData */ ) external override {
+    function performUpkeep(bytes calldata /* performData */) external override {
         // Chainlink node may call function, as well as anyone else
         // For security reasons, we ensure that the upkeep is needed
-        (bool upkeepNeeded,) = checkUpkeep("");
+        (bool upkeepNeeded, ) = checkUpkeep("");
         // require(upkeepNeeded, "Upkeep not needed");
         if (!upkeepNeeded) {
-            revert Raffle__UpkeepNotNeeded(address(this).balance, s_players.length, uint256(s_raffleState));
+            revert Raffle__UpkeepNotNeeded(
+                address(this).balance,
+                s_players.length,
+                uint256(s_raffleState)
+            );
         }
         s_raffleState = RaffleState.CALCULATING;
 
@@ -143,11 +150,9 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
      * NB: Parameter checkData is not used in this contract
      *
      */
-    function checkUpkeep(bytes memory /* checkData */ )
-        public
-        view
-        returns (bool upkeepNeeded, bytes memory /* performData */ )
-    {
+    function checkUpkeep(
+        bytes memory /* checkData */
+    ) public view returns (bool upkeepNeeded, bytes memory /* performData */) {
         bool isOpen = RaffleState.OPEN == s_raffleState;
         bool timePassed = ((block.timestamp - s_lastTimeStamp) >= i_interval);
         bool hasPlayers = s_players.length > 0;
@@ -158,7 +163,10 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         return (upkeepNeeded, "0x0");
     }
 
-    function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) internal virtual override {
+    function fulfillRandomWords(
+        uint256 requestId,
+        uint256[] calldata randomWords
+    ) internal virtual override {
         uint256 indexOfWinner = randomWords[0] % s_players.length;
         address payable winner = s_players[indexOfWinner];
 
@@ -169,7 +177,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         s_lastTimeStamp = block.timestamp;
 
         // send the balance to the winner,l entire balance of this contract
-        (bool success,) = winner.call{value: address(this).balance}("");
+        (bool success, ) = winner.call{value: address(this).balance}("");
         if (!success) revert Raffle_TransferFailed();
 
         emit WinnerPicked(s_recentWinner);

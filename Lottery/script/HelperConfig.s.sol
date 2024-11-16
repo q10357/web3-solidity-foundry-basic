@@ -3,6 +3,7 @@
 pragma solidity ^0.8.19;
 
 import {Script} from "forge-std/Script.sol";
+import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
 
 /**
  * We need to pass a lot of parameters to the raffle contract.
@@ -11,6 +12,13 @@ import {Script} from "forge-std/Script.sol";
  *     based on target deployment network.
  */
 abstract contract CodeConstants {
+    /* VRF Coordinator Mock Values */
+    uint96 public MOCK_BASE_FEE = 0.25 ether;
+    uint96 public MOCK_GAS_PRICE_LINK = 1e9;
+    // LINK / ETH price
+    uint256 public MOCK_WEI_PER_UINT_LINK = 4e15;
+
+    /* Chain IDs */
     uint256 public constant ETH_MAINNET_CHAIN_ID = 1;
     uint256 public constant ETH_SEPOLIA_CHAIN_ID = 11155111;
     uint256 public constant LOCAL_CHAIN_ID = 31337;
@@ -99,7 +107,7 @@ contract HelperConfig is CodeConstants, Script {
     */
     function getMainnetEthConfig()
         public
-        pure
+        view
         returns (NetworkConfig memory mainnetworkConfig)
     {
         mainnetworkConfig = NetworkConfig({
@@ -116,16 +124,41 @@ contract HelperConfig is CodeConstants, Script {
         ANVIL CONFIG 
         Config for local development with Anvil
     */
-    function getOrCreateAnvilConfig()
+    function getOrCreateAnvilEthConfig()
         public
-        pure
+        view
         returns (NetworkConfig memory)
     {
-        // if we have a config, return it
+        // Check for active config, if exist => return it
         if (localNetworkConfig.vrfCoordinatorV2_5 != address(0)) {
             return localNetworkConfig;
         }
+        /**
+            If no valid network config is passed to the contract,
+            we will create a mock vrCoordinatorV2_5
+            => enables us to deploy the contract locally! ^^ Yey
+        */
+        console2.log(unicode"⚠️ You have deployed a mock conract!");
+        console2.log("Make sure this was intentional");
+        vm.startBroadcast();
 
-        // else, create a new one
+        // VRF Coordinator Mock constructor accepts three params
+        // These are defined in the CodeConstants contract above
+        localNetworkConfig = NetworkConfig({
+            entranceFee: 0.01 ether,
+            interval: 30, // in seconds, specified in contract
+            vrfCoordinatorV2_5: address(
+                new VRFCoordinatorV2_5Mock(
+                    MOCK_BASE_FEE,
+                    MOCK_GAS_PRICE_LINK,
+                    MOCK_WEI_PER_UINT_LINK
+                )
+            ),
+            gasLane: 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae, // doesnt matter
+            callbackGasLimit: 500000,
+            subscriptionId: 0
+        });
+        vm.deal(localNetworkConfig.account, 100 ether);
+        return localNetworkConfig;
     }
 }

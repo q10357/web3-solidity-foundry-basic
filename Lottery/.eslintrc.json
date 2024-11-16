@@ -1,6 +1,6 @@
 {
     "ignorePatterns": [
-        "lib/",
+        "lib",
         "node_modules/"
     ]
 }
