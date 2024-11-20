@@ -34,12 +34,13 @@ contract HelperConfig is CodeConstants, Script {
                     TYPES
     //////////////////////////////////*/
     struct NetworkConfig {
+        uint256 subscriptionId;
+        bytes32 gasLane;
+        address vrfCoordinatorV2_5;
+        uint32 callbackGasLimit;
+        // Raffle specific
         uint256 entranceFee;
         uint256 interval;
-        address vrfCoordinatorV2_5;
-        bytes32 gasLane;
-        uint32 callbackGasLimit;
-        uint256 subscriptionId;
     }
 
     /*//////////////////////////////////
@@ -71,7 +72,7 @@ contract HelperConfig is CodeConstants, Script {
 
     function getConfigByChainId(
         uint256 chainId
-    ) public view returns (NetworkConfig memory) {
+    ) public returns (NetworkConfig memory) {
         // If address not 0, our mapping has a config for this chainId
         if (networkConfigs[chainId].vrfCoordinatorV2_5 != address(0)) {
             return networkConfigs[chainId];
@@ -124,11 +125,7 @@ contract HelperConfig is CodeConstants, Script {
         ANVIL CONFIG 
         Config for local development with Anvil
     */
-    function getOrCreateAnvilEthConfig()
-        public
-        view
-        returns (NetworkConfig memory)
-    {
+    function getOrCreateAnvilEthConfig() public returns (NetworkConfig memory) {
         // Check for active config, if exist => return it
         if (localNetworkConfig.vrfCoordinatorV2_5 != address(0)) {
             return localNetworkConfig;
@@ -140,23 +137,25 @@ contract HelperConfig is CodeConstants, Script {
         */
         console2.log(unicode"⚠️ You have deployed a mock conract!");
         console2.log("Make sure this was intentional");
+        // Broadcast  to simulate real blockchain transactions
         vm.startBroadcast();
-
         // VRF Coordinator Mock constructor accepts three params
         // These are defined in the CodeConstants contract above
+        VRFCoordinatorV2_5Mock vrfCoordinatorV2_5Mock = new VRFCoordinatorV2_5Mock(
+                MOCK_BASE_FEE,
+                MOCK_GAS_PRICE_LINK,
+                MOCK_WEI_PER_UINT_LINK
+            );
+        uint256 mockSubId = vrfCoordinatorV2_5Mock.createSubscription();
+        vm.stopBroadcast();
+
         localNetworkConfig = NetworkConfig({
+            subscriptionId: mockSubId,
+            vrfCoordinatorV2_5: address(vrfCoordinatorV2_5Mock),
+            gasLane: 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae, // doesnt matter (it's just a mock bro)
             entranceFee: 0.01 ether,
-            interval: 30, // in seconds, specified in contract
-            vrfCoordinatorV2_5: address(
-                new VRFCoordinatorV2_5Mock(
-                    MOCK_BASE_FEE,
-                    MOCK_GAS_PRICE_LINK,
-                    MOCK_WEI_PER_UINT_LINK
-                )
-            ),
-            gasLane: 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae, // doesnt matter
-            callbackGasLimit: 500000,
-            subscriptionId: 0
+            interval: 30, // in seconds, specified in raffle contract
+            callbackGasLimit: 500000
         });
         //vm.deal(localNetworkConfig.account, 100 ether);
         return localNetworkConfig;
