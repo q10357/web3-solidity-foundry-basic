@@ -58,21 +58,17 @@ contract HelperConfig is CodeConstants, Script {
         networkConfigs[ETH_MAINNET_CHAIN_ID] = getMainnetEthConfig();
     }
 
-    function getConfig(uint256 chainId) public returns (NetworkConfig memory) {
-        // will get config by chain
+    function getConfig() public returns (NetworkConfig memory) {
+        // will get config by chainId (which is passed as a block parameter)
+        return getConfigByChainId(block.chainid);
     }
 
-    function setConfig(
-        uint256 chainId,
-        NetworkConfig memory networkConfig
-    ) public {
+    function setConfig(uint256 chainId, NetworkConfig memory networkConfig) public {
         // Calling code pass a chainId, informing helperConfig of the network
         networkConfigs[chainId] = networkConfig;
     }
 
-    function getConfigByChainId(
-        uint256 chainId
-    ) public returns (NetworkConfig memory) {
+    function getConfigByChainId(uint256 chainId) public returns (NetworkConfig memory) {
         // If address not 0, our mapping has a config for this chainId
         if (networkConfigs[chainId].vrfCoordinatorV2_5 != address(0)) {
             return networkConfigs[chainId];
@@ -87,11 +83,7 @@ contract HelperConfig is CodeConstants, Script {
         SEPOLIA CONFIG 
         VRFfCoordinator set to the addres specified by chainlink docs
     */
-    function getSepoliaEthConfig()
-        public
-        pure
-        returns (NetworkConfig memory sepoliaNetworkConfig)
-    {
+    function getSepoliaEthConfig() public pure returns (NetworkConfig memory sepoliaNetworkConfig) {
         sepoliaNetworkConfig = NetworkConfig({
             entranceFee: 0.01 ether,
             interval: 30, // in seconds, specified in contract
@@ -106,11 +98,7 @@ contract HelperConfig is CodeConstants, Script {
         MAINNET CONFIG 
         When accessing mainnet
     */
-    function getMainnetEthConfig()
-        public
-        view
-        returns (NetworkConfig memory mainnetworkConfig)
-    {
+    function getMainnetEthConfig() public view returns (NetworkConfig memory mainnetworkConfig) {
         mainnetworkConfig = NetworkConfig({
             entranceFee: 0.1 ether,
             interval: 60, // in seconds, specified in contract
@@ -131,21 +119,18 @@ contract HelperConfig is CodeConstants, Script {
             return localNetworkConfig;
         }
         /**
-            If no valid network config is passed to the contract,
-            we will create a mock vrCoordinatorV2_5
-            => enables us to deploy the contract locally! ^^ Yey
-        */
+         * If no valid network config is passed to the contract,
+         *         we will create a mock vrCoordinatorV2_5
+         *         => enables us to deploy the contract locally! ^^ Yey
+         */
         console2.log(unicode"⚠️ You have deployed a mock conract!");
         console2.log("Make sure this was intentional");
         // Broadcast  to simulate real blockchain transactions
         vm.startBroadcast();
         // VRF Coordinator Mock constructor accepts three params
         // These are defined in the CodeConstants contract above
-        VRFCoordinatorV2_5Mock vrfCoordinatorV2_5Mock = new VRFCoordinatorV2_5Mock(
-                MOCK_BASE_FEE,
-                MOCK_GAS_PRICE_LINK,
-                MOCK_WEI_PER_UINT_LINK
-            );
+        VRFCoordinatorV2_5Mock vrfCoordinatorV2_5Mock =
+            new VRFCoordinatorV2_5Mock(MOCK_BASE_FEE, MOCK_GAS_PRICE_LINK, MOCK_WEI_PER_UINT_LINK);
         uint256 mockSubId = vrfCoordinatorV2_5Mock.createSubscription();
         vm.stopBroadcast();
 

@@ -13,6 +13,13 @@ contract DeployRaffle is Script {
     }
 
     function DeployContract() internal returns (Raffle, HelperConfig) {
-        // Implementation
+        // Init helperConfig to get network config
+        /*
+            HelperConfig will fetch config based on chainId from block object
+            We can set the chainId to any value we want, but helperconfig has only 3 configs (Mainnet, Sepolia, Local)
+            => Deploy Mock
+        */
+        HelperConfig helperConfig = new HelperConfig();
+        HelperConfig.networkConfigs memory config = helperConfig.getConfig();
     }
 }
