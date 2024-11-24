@@ -2,16 +2,16 @@
 
 pragma solidity ^0.8.19;
 
-import {DeployRaffle} from "../../script/DeployRaffle.s.sol";
-import {Raffle} from "../../src/Raffle.sol";
-import {HelperConfig} from "../../script/HelperConfig.s.sol";
 import {Test, console2} from "forge-std/Test.sol";
-import {CodeConstants} from "../../script/HelperConfig.s.sol";
+import {Raffle} from "src/Raffle.sol";
+import {DeployRaffle} from "script/DeployRaffle.s.sol";
+import {HelperConfig} from "script/HelperConfig.s.sol";
+import {CodeConstants} from "script/HelperConfig.s.sol";
 
 // CodeConstants are defined in HelperConfig.s.sol
 contract RaffleTest is Test, CodeConstants {
     /*//////////////////////////////////////////////////////////////
-                                 ERRORS
+                            ERRORS
     //////////////////////////////////////////////////////////////*/
     event RequestedRaffleWinner(uint256 indexed requestId);
     event RaffleEnter(address indexed player);
@@ -33,5 +33,7 @@ contract RaffleTest is Test, CodeConstants {
 
     function setUp() external {
         // Prepare test environment
+        DeployRaffle deployer = new DeployRaffle();
+        (raffle, helperConfig) = deployer.run();
     }
 }

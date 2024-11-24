@@ -20,6 +20,6 @@ contract DeployRaffle is Script {
             => Deploy Mock
         */
         HelperConfig helperConfig = new HelperConfig();
-        HelperConfig.networkConfigs memory config = helperConfig.getConfig();
+        HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
     }
 }
