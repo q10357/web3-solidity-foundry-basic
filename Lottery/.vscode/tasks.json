@@ -1,13 +1,19 @@
 {
-    // See https://go.microsoft.com/fwlink/?LinkId=733558
-    // for the documentation about the tasks.json format
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Insert Header",
+            "label": "Generate Header",
             "type": "shell",
-            "command": "headers ${input:headerText} >> ${file}",
-            "problemMatcher": []
+            "command": "headers ${input:headerText} | clip.exe",
+            "problemMatcher": [],
+            "options": {
+                "shell": {
+                    "executable": "/bin/bash",
+                    "args": [
+                        "-c"
+                    ]
+                }
+            }
         }
     ],
     "inputs": [
