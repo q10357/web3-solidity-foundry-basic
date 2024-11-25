@@ -35,5 +35,22 @@ contract RaffleTest is Test, CodeConstants {
         // Prepare test environment
         DeployRaffle deployer = new DeployRaffle();
         (raffle, helperConfig) = deployer.run();
+        vm.deal(PLAYER, STARTING_USER_BALANCE);
+
+        /**
+         * Our Raffle contract needs the specified parameters to be initiated
+         * We can get these parameters from the HelperConfig contract
+         */
+        HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
+        subscriptionId = config.subscriptionId;
+        gasLane = config.gasLane;
+        automationUpdateInterval = config.automationUpdateInterval;
+        raffleEntranceFee = config.raffleEntranceFee;
+        callbackGasLimit = config.callbackGasLimit;
+        vrfCoordinatorV2_5 = config.vrfCoordinatorV2_5;
+    }
+
+    function testRaffleInitializedInOpenState() {
+        assert(raffle.getRaffleState() == uint256(Raffle.RaffleState.OPEN));
     }
 }
