@@ -8,8 +8,8 @@ import {HelperConfig} from "./HelperConfig.s.sol";
 
 // Call this script to trigger deployment of the raffle contract
 contract DeployRaffle is Script {
-    function run() external {
-        DeployContract();
+    function run() external returns (Raffle, HelperConfig) {
+        return DeployContract();
     }
 
     function DeployContract() internal returns (Raffle, HelperConfig) {

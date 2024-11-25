@@ -56,23 +56,21 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     }
 
     /* State Variables */
-    // Constants
-    uint16 private constant REQUEST_CONFIRMATIONS = 3;
-    uint32 private constant NUM_WORDS = 2;
-
+    // ------------- Chainlink VRF Variables -------------
     // The gas lane to use, which specifies the maximum gas price to bump to.
     // For a list of available gas lanes on each network,
     // see https://docs.chain.link/vrf/v2-5/supported-networks#configurations
     bytes32 private immutable i_gasLane;
-    // SubscriptionID of your chainlink VRF subscription
     uint256 private immutable i_subscriptionId;
-    // Kaximum amount of gas to allow the callback to use
     uint32 private immutable i_callbackGasLimit;
+    uint16 private constant REQUEST_CONFIRMATIONS = 3;
+    uint32 private constant NUM_WORDS = 2;
+
+    // ------------- Lottery Variables -------------
     // Entrance fee to join the raffle
     uint256 private immutable i_entranceFee;
     // Required time to elapse between consecutive winners (in seconds)
     uint256 private immutable i_interval;
-
     address payable[] private s_players;
     address payable private s_recentWinner;
     uint256 private s_lastTimeStamp;
@@ -80,7 +78,8 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
 
     /* Events */
     event EnteredRaffle(address indexed player);
-    event WinnerPicked(address winner);
+    event WinnerPicked(address indexed winner);
+    event RequestedRaffleWinner(uint256 indexed requestId);
 
     constructor(
         uint256 entranceFee,
@@ -110,9 +109,10 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         if (s_raffleState != RaffleState.OPEN) revert Raffle_NotOpen();
     }
 
-    // 1. Get a random number
-    // 2. Use the random number to pick a player
-    // 3. Automatically called
+    /**
+     * @dev Once 'checkUpKeep' returne true, this function is called
+     *  => Chainlink VRF is called to get random number, which is used to pick a winner
+     */
     function performUpkeep(bytes calldata /* performData */) external override {
         // Chainlink node may call function, as well as anyone else
         // For security reasons, we ensure that the upkeep is needed
@@ -139,6 +139,8 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
                 )
             })
         );
+
+        emit RequestedRaffleWinner(requestId);
     }
 
     /**
@@ -185,5 +187,13 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     /* Getters */
     function getEntranceFee() public view returns (uint256) {
         return i_entranceFee;
+    }
+
+    function getRaffleState() public view returns (RaffleState) {
+        return s_raffleState;
+    }
+
+    function getInterval() public view returns (uint256) {
+        return i_interval;
     }
 }

@@ -53,4 +53,15 @@ contract RaffleTest is Test, CodeConstants {
     function testRaffleInitializedInOpenState() {
         assert(raffle.getRaffleState() == uint256(Raffle.RaffleState.OPEN));
     }
+
+    /*//////////////////////////////////////////////////////////////
+                              ENTER RAFFLE
+    //////////////////////////////////////////////////////////////*/
+    function testRaffleRevertsWHenYouDontPayEnought() public {
+        // Arrange
+        vm.prank(PLAYER);
+        // Act / Assert
+        vm.expectRevert(Raffle.Raffle__SendMoreToEnterRaffle.selector);
+        raffle.enterRaffle();
+    }
 }
