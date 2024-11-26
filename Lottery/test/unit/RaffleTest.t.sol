@@ -20,6 +20,11 @@ contract RaffleTest is Test, CodeConstants {
     uint32 callbackGasLimit;
     address vrfCoordinatorV2_5;
 
+    /* Events - Had to Copy to "mock" an Emit  */
+    event RaffleEntered(address indexed player);
+    event WinnerPicked(address indexed winner);
+    event RequestedRaffleWinner(uint256 indexed requestId);
+
     address public PLAYER = makeAddr("player");
     uint256 public constant STARTING_USER_BALANCE = 10 ether;
     uint256 public constant LINK_BALANCE = 100 ether;
@@ -28,7 +33,6 @@ contract RaffleTest is Test, CodeConstants {
         // Prepare test environment
         DeployRaffle deployer = new DeployRaffle();
         (raffle, helperConfig) = deployer.run();
-        vm.deal(PLAYER, STARTING_USER_BALANCE);
 
         /**
          * Our Raffle contract needs the specified parameters to be initiated
@@ -40,7 +44,9 @@ contract RaffleTest is Test, CodeConstants {
         raffleEntranceFee = config.entranceFee;
         callbackGasLimit = config.callbackGasLimit;
         vrfCoordinatorV2_5 = config.vrfCoordinatorV2_5;
-        console2.log("Raffle Entrance Fee: %s", raffleEntranceFee);
+
+        // Deal some ETH to the player
+        vm.deal(PLAYER, STARTING_USER_BALANCE);
     }
 
     function testRaffleInitializedInOpenState() public view {
@@ -62,5 +68,25 @@ contract RaffleTest is Test, CodeConstants {
         // Act / Assert
         vm.expectRevert(Raffle.Raffle_InsufficientETHSent.selector);
         raffle.enterRaffle();
+    }
+
+    function testRaffleRecordsPlayersUponEntering() public {
+        // Arrange
+        vm.prank(PLAYER);
+        // Act
+        raffle.enterRaffle{value: raffleEntranceFee}();
+        // Assert
+        address playerRecorded = raffle.getPlayer(0);
+        assert(playerRecorded == PLAYER);
+    }
+
+    function testEnteringRaffleEmitsEvent() public {
+        // Arrange
+        vm.prank(PLAYER);
+        // Act
+        vm.expectEmit(true, false, false, false, address(raffle));
+        emit RaffleEntered(PLAYER);
+        // Assert (NB: the expectEmit function will assert for us)
+        raffle.enterRaffle{value: raffleEntranceFee}();
     }
 }
