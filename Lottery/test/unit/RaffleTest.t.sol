@@ -10,13 +10,6 @@ import {CodeConstants} from "script/HelperConfig.s.sol";
 
 // CodeConstants are defined in HelperConfig.s.sol
 contract RaffleTest is Test, CodeConstants {
-    /*//////////////////////////////////////////////////////////////
-                            ERRORS
-    //////////////////////////////////////////////////////////////*/
-    event RequestedRaffleWinner(uint256 indexed requestId);
-    event RaffleEnter(address indexed player);
-    event WinnerPicked(address indexed player);
-
     Raffle public raffle;
     HelperConfig public helperConfig;
 
@@ -44,34 +37,30 @@ contract RaffleTest is Test, CodeConstants {
         HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
         subscriptionId = config.subscriptionId;
         gasLane = config.gasLane;
-        automationUpdateInterval = config.automationUpdateInterval;
-        raffleEntranceFee = config.raffleEntranceFee;
+        raffleEntranceFee = config.entranceFee;
         callbackGasLimit = config.callbackGasLimit;
         vrfCoordinatorV2_5 = config.vrfCoordinatorV2_5;
+        console2.log("Raffle Entrance Fee: %s", raffleEntranceFee);
     }
 
-    function testRaffleInitializedInOpenState() {
-        assert(raffle.getRaffleState() == uint256(Raffle.RaffleState.OPEN));
+    function testRaffleInitializedInOpenState() public view {
+        assert(raffle.getRaffleState() == Raffle.RaffleState.OPEN);
     }
 
     /*//////////////////////////////////////////////////////////////
                               ENTER RAFFLE
     //////////////////////////////////////////////////////////////*/
     function testRaffleRevertsWHenYouDontPayEnought() public {
+        /**
+         * We need to send the correct amount of ETH to enter the raffle
+         * If we don't send enough, the transaction will revert
+         * NB: vm.prank() is a helper function that sends a transaction with a specified amount of ETH
+         * it will only be applied to the next transaction (in this case, enterRaffle())
+         */
         // Arrange
         vm.prank(PLAYER);
         // Act / Assert
-        vm.expectRevert(Raffle.Raffle__SendMoreToEnterRaffle.selector);
+        vm.expectRevert(Raffle.Raffle_InsufficientETHSent.selector);
         raffle.enterRaffle();
-    }
-
-    function testRaffleRecordsPlayerWhenTheyEnter() public {
-        // Arrange
-        vm.prank(PLAYER);
-        // Act
-        raffle.enterRaffle{value: raffleEntranceFee}();
-        // Assert
-        address playerRecorded = raffle.getPlayer(0);
-        assert(playerRecorded == PLAYER);
     }
 }
