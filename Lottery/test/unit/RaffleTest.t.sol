@@ -108,4 +108,33 @@ contract RaffleTest is Test, CodeConstants {
         vm.prank(PLAYER);
         raffle.enterRaffle{value: raffleEntranceFee}();
     }
+
+    /**
+     * CheckUpkeep should return false if raffle has no balance
+     */
+    function testCheckUpkeepReturnsFalseIfItHasNoBalance() public {
+        // Arrange
+        vm.warp(block.timestamp + raffleInterval + 1); // interval is good
+        vm.roll(block.number + 1);
+        // Act
+        (bool upkeepNeeded,) = raffle.checkUpkeep("");
+        // Assert (balance is 0, and no players)
+        assert(!upkeepNeeded);
+    }
+
+    /**
+     * CheckUpkeep should return false if raffle is not open
+     */
+    function testCheckUpkeepReturnsFalseIfRaffleIsNotOpen() public {
+        // Arrange
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: raffleEntranceFee}(); // balance and players are good
+        vm.warp(block.timestamp + raffleInterval + 1); // interval is good (time passed)
+        vm.roll(block.number + 1);
+        raffle.performUpkeep("");
+        // Act
+        (bool upkeepNeeded,) = raffle.checkUpkeep(""); // raffle is now in CALCULATING state
+        // Assert
+        assert(!upkeepNeeded);
+    }
 }
