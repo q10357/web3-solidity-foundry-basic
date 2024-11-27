@@ -48,7 +48,7 @@ contract DeployRaffle is Script {
         );
 
         AddConsumer addConsumer = new AddConsumer();
-        addConsumer.addConsumer(vrfCoordinator, subID, config.link, address(raffle));
+        addConsumer.addConsumer(config.vrfCoordinatorV2_5, config.subscriptionId, config.link, address(raffle));
 
         return (raffle, helperConfig);
     }
