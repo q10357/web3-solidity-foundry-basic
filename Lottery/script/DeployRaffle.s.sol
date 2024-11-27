@@ -3,8 +3,9 @@
 pragma solidity ^0.8.19;
 
 import {Script} from "forge-std/Script.sol";
-import {Raffle} from "../src/Raffle.sol";
-import {HelperConfig} from "./HelperConfig.s.sol";
+import {Raffle} from "src/Raffle.sol";
+import {HelperConfig} from "script/HelperConfig.s.sol";
+import {CreateSubscription} from "script/Interations.s.sol";
 
 // Call this script to trigger deployment of the raffle contract
 contract DeployRaffle is Script {
@@ -21,6 +22,15 @@ contract DeployRaffle is Script {
         */
         HelperConfig helperConfig = new HelperConfig();
         HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
+
+        // If the subscriptionID is 0, we won't be able to call chainlink VRF (need to have valid subscription and added as consumer)
+        // ? => we need to set create a subscription
+        if (config.subscriptionId == 0) {
+            // create subscription
+            CreateSubscription createSubscription = new CreateSubscription();
+            (config.subscriptionId, config.vrfCoordinatorV2_5) =
+                createSubscription.createSubscription(config.vrfCoordinatorV2_5);
+        }
 
         // HelperConfig has all the values we need to deploy the raffle contract
         Raffle raffle = new Raffle(

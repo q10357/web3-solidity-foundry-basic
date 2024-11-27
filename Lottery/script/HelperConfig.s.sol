@@ -63,17 +63,12 @@ contract HelperConfig is CodeConstants, Script {
         return getConfigByChainId(block.chainid);
     }
 
-    function setConfig(
-        uint256 chainId,
-        NetworkConfig memory networkConfig
-    ) public {
+    function setConfig(uint256 chainId, NetworkConfig memory networkConfig) public {
         // Calling code pass a chainId, informing helperConfig of the network
         networkConfigs[chainId] = networkConfig;
     }
 
-    function getConfigByChainId(
-        uint256 chainId
-    ) public returns (NetworkConfig memory) {
+    function getConfigByChainId(uint256 chainId) public returns (NetworkConfig memory) {
         // If address not 0, our mapping has a config for this chainId
         if (networkConfigs[chainId].vrfCoordinatorV2_5 != address(0)) {
             return networkConfigs[chainId];
@@ -88,11 +83,7 @@ contract HelperConfig is CodeConstants, Script {
         SEPOLIA CONFIG 
         VRFfCoordinator set to the addres specified by chainlink docs
     */
-    function getSepoliaEthConfig()
-        public
-        pure
-        returns (NetworkConfig memory sepoliaNetworkConfig)
-    {
+    function getSepoliaEthConfig() public pure returns (NetworkConfig memory sepoliaNetworkConfig) {
         sepoliaNetworkConfig = NetworkConfig({
             entranceFee: 0.01 ether,
             interval: 30, // in seconds, specified in contract
@@ -107,11 +98,7 @@ contract HelperConfig is CodeConstants, Script {
         MAINNET CONFIG 
         When accessing mainnet
     */
-    function getMainnetEthConfig()
-        public
-        view
-        returns (NetworkConfig memory mainnetworkConfig)
-    {
+    function getMainnetEthConfig() public view returns (NetworkConfig memory mainnetworkConfig) {
         mainnetworkConfig = NetworkConfig({
             entranceFee: 0.1 ether,
             interval: 60, // in seconds, specified in contract
@@ -142,22 +129,22 @@ contract HelperConfig is CodeConstants, Script {
         vm.startBroadcast();
         // VRF Coordinator Mock constructor accepts three params
         // These are defined in the CodeConstants contract above
-        VRFCoordinatorV2_5Mock vrfCoordinatorV2_5Mock = new VRFCoordinatorV2_5Mock(
-                MOCK_BASE_FEE,
-                MOCK_GAS_PRICE_LINK,
-                MOCK_WEI_PER_UINT_LINK
-            );
+        VRFCoordinatorV2_5Mock vrfCoordinatorV2_5Mock =
+            new VRFCoordinatorV2_5Mock(MOCK_BASE_FEE, MOCK_GAS_PRICE_LINK, MOCK_WEI_PER_UINT_LINK);
         uint256 mockSubId = vrfCoordinatorV2_5Mock.createSubscription();
         vm.stopBroadcast();
+        console2.log("Mock Subscription ID:", mockSubId);
 
         localNetworkConfig = NetworkConfig({
             subscriptionId: mockSubId,
             vrfCoordinatorV2_5: address(vrfCoordinatorV2_5Mock),
-            gasLane: 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae, // doesnt matter (it's just a mock bro)
+            gasLane: 0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c, // doesnt matter (it's just a mock bro)
             entranceFee: 0.01 ether,
             interval: 30, // in seconds, specified in raffle contract
             callbackGasLimit: 500000
         });
+        console2.log("Raffle Config Subscription ID:", localNetworkConfig.subscriptionId);
+
         //vm.deal(localNetworkConfig.account, 100 ether);
         return localNetworkConfig;
     }
