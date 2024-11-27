@@ -15,7 +15,7 @@ contract RaffleTest is Test, CodeConstants {
 
     uint256 subscriptionId;
     bytes32 gasLane;
-    uint256 automationUpdateInterval;
+    uint256 raffleInterval;
     uint256 raffleEntranceFee;
     uint32 callbackGasLimit;
     address vrfCoordinatorV2_5;
@@ -41,9 +41,10 @@ contract RaffleTest is Test, CodeConstants {
         HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
         subscriptionId = config.subscriptionId;
         gasLane = config.gasLane;
-        raffleEntranceFee = config.entranceFee;
         callbackGasLimit = config.callbackGasLimit;
         vrfCoordinatorV2_5 = config.vrfCoordinatorV2_5;
+        raffleEntranceFee = config.entranceFee;
+        raffleInterval = config.interval;
 
         // Deal some ETH to the player
         vm.deal(PLAYER, STARTING_USER_BALANCE);
@@ -54,15 +55,15 @@ contract RaffleTest is Test, CodeConstants {
     }
 
     /*//////////////////////////////////////////////////////////////
-                              ENTER RAFFLE
+                            RAFFLE ENTRY TESTS
     //////////////////////////////////////////////////////////////*/
+    /**
+     * We need to send the correct amount of ETH to enter the raffle
+     * If we don't send enough, the transaction will revert
+     * NB: vm.prank() is a helper function that sends a transaction with a specified amount of ETH
+     * it will only be applied to the next transaction (in this case, enterRaffle())
+     */
     function testRaffleRevertsWHenYouDontPayEnought() public {
-        /**
-         * We need to send the correct amount of ETH to enter the raffle
-         * If we don't send enough, the transaction will revert
-         * NB: vm.prank() is a helper function that sends a transaction with a specified amount of ETH
-         * it will only be applied to the next transaction (in this case, enterRaffle())
-         */
         // Arrange
         vm.prank(PLAYER);
         // Act / Assert
@@ -87,6 +88,24 @@ contract RaffleTest is Test, CodeConstants {
         vm.expectEmit(true, false, false, false, address(raffle));
         emit RaffleEntered(PLAYER);
         // Assert (NB: the expectEmit function will assert for us)
+        raffle.enterRaffle{value: raffleEntranceFee}();
+    }
+
+    /*
+     * Test that the raffle reverts when attempting to enter while in CALCULATING state.
+        state, wm.warp is able to change the block.timestamp (simulates time passing)
+        It enables the performUpkeep() function to be called. PerormUpkeep() changes the state to CALCULATING
+     **/
+    function testDontAllowPlayersToEnterWhileRaffleIsCalculating() public {
+        // Arrange
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: raffleEntranceFee}();
+        vm.warp(block.timestamp + raffleInterval + 1);
+        vm.roll(block.number + 1);
+        raffle.performUpkeep("");
+        // Act / Assert
+        vm.expectRevert(Raffle.Raffle_NotOpen.selector);
+        vm.prank(PLAYER);
         raffle.enterRaffle{value: raffleEntranceFee}();
     }
 }

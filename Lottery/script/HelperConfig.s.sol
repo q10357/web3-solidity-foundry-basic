@@ -4,6 +4,7 @@ pragma solidity ^0.8.19;
 
 import {Script, console2} from "forge-std/Script.sol";
 import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
+import {LinkToken} from "test/mocks/LinkToken.sol";
 
 /**
  * We need to pass a lot of parameters to the raffle contract.
@@ -34,10 +35,11 @@ contract HelperConfig is CodeConstants, Script {
                     TYPES
     //////////////////////////////////*/
     struct NetworkConfig {
-        uint256 subscriptionId;
         bytes32 gasLane;
+        uint256 subscriptionId;
         address vrfCoordinatorV2_5;
         uint32 callbackGasLimit;
+        address link;
         // Raffle specific
         uint256 entranceFee;
         uint256 interval;
@@ -90,7 +92,9 @@ contract HelperConfig is CodeConstants, Script {
             vrfCoordinatorV2_5: 0x9DdfaCa8183c41ad55329BdeeD9F6A8d53168B1B,
             gasLane: 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae,
             callbackGasLimit: 500000,
-            subscriptionId: 0
+            // This is my seoilia subscription ID, 
+            subscriptionId: 0,
+            link: 0x779877A7B0D9E8603169DdbD7836e478b4624789
         });
     }
 
@@ -105,7 +109,8 @@ contract HelperConfig is CodeConstants, Script {
             vrfCoordinatorV2_5: 0xD7f86b4b8Cae7D942340FF628F82735b7a20893a,
             gasLane: 0x3fd2fec10d06ee8f65e7f2e95f5c56511359ece3f33960ad8a866ae24a8ff10b,
             callbackGasLimit: 500000,
-            subscriptionId: 1
+            subscriptionId: 1,
+            link: 0x514910771AF9Ca656af840dff83E8264EcF986CA
         });
     }
 
@@ -132,16 +137,20 @@ contract HelperConfig is CodeConstants, Script {
         VRFCoordinatorV2_5Mock vrfCoordinatorV2_5Mock =
             new VRFCoordinatorV2_5Mock(MOCK_BASE_FEE, MOCK_GAS_PRICE_LINK, MOCK_WEI_PER_UINT_LINK);
         uint256 mockSubId = vrfCoordinatorV2_5Mock.createSubscription();
+        // LinkToken is a mock contract, used to simulate LINK token (since we are on a local network, in reality we would use the real LINK token)
+        LinkToken linkToken = new LinkToken();
+
         vm.stopBroadcast();
         console2.log("Mock Subscription ID:", mockSubId);
 
         localNetworkConfig = NetworkConfig({
+            gasLane: 0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c, // doesnt matter (it's just a mock bro)
             subscriptionId: mockSubId,
             vrfCoordinatorV2_5: address(vrfCoordinatorV2_5Mock),
-            gasLane: 0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c, // doesnt matter (it's just a mock bro)
+            callbackGasLimit: 500000,
+            link: address(linkToken),
             entranceFee: 0.01 ether,
-            interval: 30, // in seconds, specified in raffle contract
-            callbackGasLimit: 500000
+            interval: 30 // in seconds, specified in raffle contract
         });
         console2.log("Raffle Config Subscription ID:", localNetworkConfig.subscriptionId);
 

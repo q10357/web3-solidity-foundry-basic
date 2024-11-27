@@ -30,6 +30,7 @@ contract DeployRaffle is Script {
             CreateSubscription createSubscription = new CreateSubscription();
             (config.subscriptionId, config.vrfCoordinatorV2_5) =
                 createSubscription.createSubscription(config.vrfCoordinatorV2_5);
+            // Next => Fund it!
         }
 
         // HelperConfig has all the values we need to deploy the raffle contract
