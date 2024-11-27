@@ -2,6 +2,7 @@
 pragma solidity ^0.8.19;
 
 import {Script, console2} from "forge-std/Script.sol";
+import {DevOpsTools} from "lib/foundry-devops/src/DevOpsTools.sol";
 import {HelperConfig, CodeConstants} from "script/HelperConfig.s.sol";
 import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
 import {LinkToken} from "test/mocks/LinkToken.sol";
@@ -83,13 +84,38 @@ contract FundSubscription is Script, CodeConstants {
 }
 
 contract AddConsumer is Script {
-/**
- * So, we have a subscription and it's funded. Now, we need to add a consumer contract
- * This is all because performUpkeep() returns InvalidConsumer()
- * It may seem like a lot, and it is. But it's a one-time setup.
- * Interactions now contains three contracts, being:
- *     1. CreateSubscription: Creates a VRF subscription
- *     2. FundSubscription: Funds link to that subscription
- *     3. AddConsumer: Adds this contract as a consumer of the subscription
- */
+    /**
+     * So, we have a subscription and it's funded. Now, we need to add a consumer contract
+     * This is all because performUpkeep() returns InvalidConsumer()
+     * It may seem like a lot, and it is. But it's a one-time setup.
+     * Interactions now contains three contracts, being:
+     *     1. CreateSubscription: Creates a VRF subscription
+     *     2. FundSubscription: Funds link to that subscription
+     *     3. AddConsumer: Adds this contract as a consumer of the subscription
+     */
+    function addConsumerUsingConfig(address consumerAddr) public {
+        HelperConfig helperConfig = new HelperConfig();
+        address vrfCoordinatorAddr = helperConfig.getConfig().vrfCoordinatorV2_5;
+        uint256 subscriptionID = helperConfig.getConfig().subscriptionId;
+        address linkToken = helperConfig.getConfig().link;
+
+        addConsumer(vrfCoordinatorAddr, subscriptionID, linkToken, consumerAddr);
+    }
+
+    function addConsumer(address vrfCoordinator, uint256 subID, address link, address consumer) public {
+        console2.log("Adding consumer: ", consumer);
+        console2.log("To subscription: ", subID);
+        console2.log("Using vrfCoordinator: ", vrfCoordinator);
+        console2.log("On chainID: ", block.chainid);
+
+        vm.startBroadcast();
+        VRFCoordinatorV2_5Mock(vrfCoordinator).addConsumer(subID, consumer);
+        vm.stopBroadcast();
+        console2.log("Consumer added!");
+    }
+
+    function run() external {
+        address mostRecentlyDeployed = DevOpsTools.get_most_recent_deployment("Raffle", block.chainid);
+        addConsumerUsingConfig(mostRecentlyDeployed);
+    }
 }

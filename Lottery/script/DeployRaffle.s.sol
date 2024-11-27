@@ -5,7 +5,7 @@ pragma solidity ^0.8.19;
 import {Script} from "forge-std/Script.sol";
 import {Raffle} from "src/Raffle.sol";
 import {HelperConfig} from "script/HelperConfig.s.sol";
-import {CreateSubscription} from "script/Interations.s.sol";
+import {CreateSubscription, FundSubscription, AddConsumer} from "script/Interations.s.sol";
 
 // Call this script to trigger deployment of the raffle contract
 contract DeployRaffle is Script {
@@ -31,6 +31,10 @@ contract DeployRaffle is Script {
             (config.subscriptionId, config.vrfCoordinatorV2_5) =
                 createSubscription.createSubscription(config.vrfCoordinatorV2_5);
             // Next => Fund it!
+            FundSubscription fundSubscription = new FundSubscription();
+            fundSubscription.fundSubscription(config.vrfCoordinatorV2_5, config.subscriptionId, config.link);
+            // We will add a consumer, but AFTER Raffle contract is deployed
+            // This is because we need the (most recently deployed) Raffle contract address to add it as a consumer
         }
 
         // HelperConfig has all the values we need to deploy the raffle contract
@@ -42,6 +46,9 @@ contract DeployRaffle is Script {
             config.entranceFee,
             config.interval
         );
+
+        AddConsumer addConsumer = new AddConsumer();
+        addConsumer.addConsumer(vrfCoordinator, subID, config.link, address(raffle));
 
         return (raffle, helperConfig);
     }

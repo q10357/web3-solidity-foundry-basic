@@ -4,6 +4,7 @@ out = "out"
 libs = ["lib"]
 remappings = ['@chainlink/contracts/=lib/chainlink-brownie-contracts/contracts/', '@solmate=lib/solmate/src/']
 
+# allowed to read because of cyfrin-devops tool
 fs_permissions = [
     { access = "read", path = "./broadcast" },
     { access = "read", path = "./reports" },
