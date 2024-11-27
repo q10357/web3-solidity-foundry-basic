@@ -37,6 +37,9 @@ contract CreateSubscription is Script {
     }
 }
 
+/**
+ * Call this contract to fund  a chainlink subscription
+ */
 contract FundSubscription is Script, CodeConstants {
     uint256 public constant FUND_AMOUNT = 3 ether; // 3 LINK
 
@@ -58,7 +61,7 @@ contract FundSubscription is Script, CodeConstants {
         console2.log("On chainID: ", block.chainid);
 
         // NB: We can refer to value LOCAL_CHAIN_ID since we inherit CodeConstants
-        if(block.chainid == LOCAL_CHAIN_ID) {
+        if (block.chainid == LOCAL_CHAIN_ID) {
             // We can mint LINK tokens because of it being a mock on local/ test network)
             // Usually, we would transfer LINK tokens from the deployer's wallet.
             vm.startBroadcast();
@@ -66,7 +69,7 @@ contract FundSubscription is Script, CodeConstants {
             LinkToken(link).mint(address(this), FUND_AMOUNT);
             vm.stopBroadcast();
         } else {
-            // Actual LINK token
+            // Actual LINK token (chainID is not local)
             vm.startBroadcast();
             LinkToken(link).transferAndCall(vrfCoordinator, FUND_AMOUNT, abi.encode(subID));
             vm.stopBroadcast();
@@ -77,4 +80,16 @@ contract FundSubscription is Script, CodeConstants {
     function run() public {
         fundSubscriptionUsingConfig();
     }
+}
+
+contract AddConsumer is Script {
+/**
+ * So, we have a subscription and it's funded. Now, we need to add a consumer contract
+ * This is all because performUpkeep() returns InvalidConsumer()
+ * It may seem like a lot, and it is. But it's a one-time setup.
+ * Interactions now contains three contracts, being:
+ *     1. CreateSubscription: Creates a VRF subscription
+ *     2. FundSubscription: Funds link to that subscription
+ *     3. AddConsumer: Adds this contract as a consumer of the subscription
+ */
 }
