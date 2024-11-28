@@ -137,4 +137,37 @@ contract RaffleTest is Test, CodeConstants {
         // Assert
         assert(!upkeepNeeded);
     }
+
+    /** 
+    * Checkupkeep returns false if defined interval has not passed
+    * Not using wvm.warp to simulate time passing, the raffle contract should return false
+     */
+    function testCheckUpkeepReturnsFalseIfEnoughTimeNotPassed() public {
+        // Arrange
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: raffleEntranceFee}(); // balance and players are good
+        // Act
+        (bool upkeepNeeded,) = raffle.checkUpkeep("");
+        // Assert
+        assert(!upkeepNeeded);
+    }
+
+    /**
+     * CheckUpkeep should return true if:
+        * - Raffle is open
+        * - Enough time has passed
+        * - Raffle has balance
+     */
+    function testCheckUpkeepReturnsTrueIfAllConditionsAreMet() public {
+        // Arrange
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: raffleEntranceFee}(); // balance and players are good
+        vm.warp(block.timestamp + raffleInterval + 1); // interval is good (time passed)
+        // Act
+        (bool upkeepNeeded,) = raffle.checkUpkeep("");
+        // Assert
+        assert(upkeepNeeded);
+    }
+
+
 }
