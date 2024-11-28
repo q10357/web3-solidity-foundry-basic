@@ -3,6 +3,9 @@
 pragma solidity ^0.8.19;
 
 import {Test, console2} from "forge-std/Test.sol";
+import {Vm} from "forge-std/Vm.sol";
+import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
+
 import {Raffle} from "src/Raffle.sol";
 import {DeployRaffle} from "script/DeployRaffle.s.sol";
 import {HelperConfig} from "script/HelperConfig.s.sol";
@@ -48,6 +51,15 @@ contract RaffleTest is Test, CodeConstants {
 
         // Deal some ETH to the player
         vm.deal(PLAYER, STARTING_USER_BALANCE);
+    }
+
+    modifier raffleEnteredAndTimePassed() {
+        // Arrange
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: raffleEntranceFee}(); // balance and players are good
+        vm.warp(block.timestamp + raffleInterval + 1); // interval is good (time passed)
+        vm.roll(block.number + 1); // roll function to simulate a new block
+        _;
     }
 
     function testRaffleInitializedInOpenState() public view {
@@ -96,7 +108,7 @@ contract RaffleTest is Test, CodeConstants {
         state, wm.warp is able to change the block.timestamp (simulates time passing)
         It enables the performUpkeep() function to be called. PerormUpkeep() changes the state to CALCULATING
      **/
-    function testDontAllowPlayersToEnterWhileRaffleIsCalculating() public {
+    function testDontAllowPlayersToEnterWhileRaffleIsCalculating() public raffleEnteredAndTimePassed {
         // Arrange
         vm.prank(PLAYER);
         raffle.enterRaffle{value: raffleEntranceFee}();
@@ -109,6 +121,9 @@ contract RaffleTest is Test, CodeConstants {
         raffle.enterRaffle{value: raffleEntranceFee}();
     }
 
+    /*//////////////////////////////////////////////////////////////
+                              CHECKUPKEEP
+    //////////////////////////////////////////////////////////////*/
     /**
      * CheckUpkeep should return false if raffle has no balance
      */
@@ -125,14 +140,9 @@ contract RaffleTest is Test, CodeConstants {
     /**
      * CheckUpkeep should return false if raffle is not open
      */
-    function testCheckUpkeepReturnsFalseIfRaffleIsNotOpen() public {
-        // Arrange
-        vm.prank(PLAYER);
-        raffle.enterRaffle{value: raffleEntranceFee}(); // balance and players are good
-        vm.warp(block.timestamp + raffleInterval + 1); // interval is good (time passed)
-        vm.roll(block.number + 1);
-        raffle.performUpkeep("");
+    function testCheckUpkeepReturnsFalseIfRaffleIsNotOpen() public raffleEnteredAndTimePassed {
         // Act
+        raffle.performUpkeep("");
         (bool upkeepNeeded,) = raffle.checkUpkeep(""); // raffle is now in CALCULATING state
         // Assert
         assert(!upkeepNeeded);
@@ -169,17 +179,14 @@ contract RaffleTest is Test, CodeConstants {
         assert(upkeepNeeded);
     }
 
+    /*//////////////////////////////////////////////////////////////
+                             PERFORMUPKEEP
+    //////////////////////////////////////////////////////////////*/
     /**
      * You what what time it is!? It's time to test PerformUpkeep() !
      * Lets start by testing that it reverts if CheckUpkeep value is set to true
      */
-    function testperformupkeepCanOnlyRunIfCheckUpkeepIsTrue() public {
-        // Arrange
-        vm.prank(PLAYER);
-        raffle.enterRaffle{value: raffleEntranceFee}(); // balance and players are good
-        vm.warp(block.timestamp + raffleInterval + 1); // interval is good (time passed)
-        vm.roll(block.number + 1); // roll function to simulate a new block
-
+    function testPerformupkeepCanOnlyRunIfCheckUpkeepIsTrue() public raffleEnteredAndTimePassed {
         // Act / Assert
         // We dont need assert here, if it reverts, the test will fail
         raffle.performUpkeep("");
@@ -193,15 +200,43 @@ contract RaffleTest is Test, CodeConstants {
         uint256 balance = 0;
         uint256 numPlayers = 0;
         Raffle.RaffleState rState = raffle.getRaffleState();
+
         // Act / Assert
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Raffle.Raffle__UpkeepNotNeeded.selector,
-                balance,
-                numPlayers,
-                rState
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Raffle.Raffle__UpkeepNotNeeded.selector, balance, numPlayers, rState));
         raffle.performUpkeep("");
+    }
+
+    /**
+     * Test that performUpkeep updates raffle state to CALCULATING & emits requestID
+     */
+    function testPerformUpkeepUpdatesRaffleStateAndEmitsRequestID() public raffleEnteredAndTimePassed {
+        // Arrange in raffleEnteredAndTimePassed
+        // Act
+        vm.recordLogs();
+        raffle.performUpkeep(""); // emits requestID
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        bytes32 requestID = entries[0].topics[1];
+        for (uint256 i = 0; i < entries[0].topics.length; i++) {
+            console2.log("Topic Index:", i);
+            console2.logBytes32(entries[0].topics[1]); // Log each topic
+        }
+        // Assert
+        Raffle.RaffleState rState = raffle.getRaffleState();
+        assert(rState == Raffle.RaffleState.CALCULATING);
+        assert(uint256(requestID) > 0);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                           FULFILLRANDOMWORDS
+    //////////////////////////////////////////////////////////////*/
+    /**
+     * Test that fulfillRandomWords can only be called after performUpkeep
+     */
+    function testFulfillRandomWordsCanOnlyBeCalledAfterPerformUpkeep(uint256 randomRequestID) public raffleEnteredAndTimePassed {
+        // Arrange in raffleEnteredAndTimePassed
+        // Act / Assert
+        vm.expectRevert(VRFCoordinatorV2_5Mock.InvalidRequest.selector);
+        // vm.mockCall could be used here...
+        VRFCoordinatorV2_5Mock(vrfCoordinatorV2_5).fulfillRandomWords(randomRequestID, address(raffle));
     }
 }
