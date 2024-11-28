@@ -138,9 +138,9 @@ contract RaffleTest is Test, CodeConstants {
         assert(!upkeepNeeded);
     }
 
-    /** 
-    * Checkupkeep returns false if defined interval has not passed
-    * Not using wvm.warp to simulate time passing, the raffle contract should return false
+    /**
+     * Checkupkeep returns false if defined interval has not passed
+     * Not using wvm.warp to simulate time passing, the raffle contract should return false
      */
     function testCheckUpkeepReturnsFalseIfEnoughTimeNotPassed() public {
         // Arrange
@@ -154,9 +154,9 @@ contract RaffleTest is Test, CodeConstants {
 
     /**
      * CheckUpkeep should return true if:
-        * - Raffle is open
-        * - Enough time has passed
-        * - Raffle has balance
+     * - Raffle is open
+     * - Enough time has passed
+     * - Raffle has balance
      */
     function testCheckUpkeepReturnsTrueIfAllConditionsAreMet() public {
         // Arrange
@@ -169,5 +169,39 @@ contract RaffleTest is Test, CodeConstants {
         assert(upkeepNeeded);
     }
 
+    /**
+     * You what what time it is!? It's time to test PerformUpkeep() !
+     * Lets start by testing that it reverts if CheckUpkeep value is set to true
+     */
+    function testperformupkeepCanOnlyRunIfCheckUpkeepIsTrue() public {
+        // Arrange
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: raffleEntranceFee}(); // balance and players are good
+        vm.warp(block.timestamp + raffleInterval + 1); // interval is good (time passed)
+        vm.roll(block.number + 1); // roll function to simulate a new block
 
+        // Act / Assert
+        // We dont need assert here, if it reverts, the test will fail
+        raffle.performUpkeep("");
+    }
+
+    /**
+     * Test that performUpkeep reverts if checkUpkeep is false
+     */
+    function testPerformUpkeepRevertsIfCheckUpkeepIsFalse() public {
+        // Arrange
+        uint256 balance = 0;
+        uint256 numPlayers = 0;
+        Raffle.RaffleState rState = raffle.getRaffleState();
+        // Act / Assert
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Raffle.Raffle__UpkeepNotNeeded.selector,
+                balance,
+                numPlayers,
+                rState
+            )
+        );
+        raffle.performUpkeep("");
+    }
 }
