@@ -1,6 +1,8 @@
 # Compiler files
 cache/
 out/
+bin/
+lib/
 
 # Ignores development broadcast logs
 !/broadcast
@@ -15,8 +17,3 @@ docs/
 
 # Node_modules
 /node_modules/
-
-# Foundry build artifacts
-out/
-bin/
-cache/

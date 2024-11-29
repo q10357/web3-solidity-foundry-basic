@@ -1,6 +1,8 @@
-# Compiler files
-cache/
+# Foundry build artifacts
 out/
+bin/
+cache/
+lib/
 
 # Ignores development broadcast logs
 !/broadcast
@@ -15,8 +17,3 @@ docs/
 
 # tmp
 tmp/
-
-# Foundry build artifacts
-out/
-bin/
-cache/
