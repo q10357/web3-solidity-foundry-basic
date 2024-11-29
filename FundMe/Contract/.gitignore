@@ -15,3 +15,8 @@ docs/
 
 # tmp
 tmp/
+
+# Foundry build artifacts
+out/
+bin/
+cache/

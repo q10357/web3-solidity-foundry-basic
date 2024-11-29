@@ -15,3 +15,8 @@ docs/
 
 # Node_modules
 /node_modules/
+
+# Foundry build artifacts
+out/
+bin/
+cache/

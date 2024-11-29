@@ -14,3 +14,8 @@ docs/
 .env
 
 node_modules/
+
+# Foundry build artifacts
+out/
+bin/
+cache/
