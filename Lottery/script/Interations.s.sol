@@ -42,7 +42,7 @@ contract CreateSubscription is Script {
  * Call this contract to fund  a chainlink subscription
  */
 contract FundSubscription is Script, CodeConstants {
-    uint256 public constant FUND_AMOUNT = 300 ether; // LINK
+    uint256 public constant FUND_AMOUNT = 3 ether; // LINK
 
     function fundSubscriptionUsingConfig() public {
         HelperConfig helperConfig = new HelperConfig();
@@ -91,10 +91,10 @@ contract AddConsumer is Script {
         HelperConfig helperConfig = new HelperConfig();
         HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
 
-        addConsumer(config.vrfCoordinatorV2_5, config.subscriptionId, config.link, consumerAddr, config.account);
+        addConsumer(config.vrfCoordinatorV2_5, config.subscriptionId, consumerAddr, config.account);
     }
 
-    function addConsumer(address vrfCoordinator, uint256 subID, address link, address consumer, address account)
+    function addConsumer(address vrfCoordinator, uint256 subID, address consumer, address account)
         public
     {
         console2.log("Adding consumer: ", consumer);
@@ -102,7 +102,7 @@ contract AddConsumer is Script {
         console2.log("Using vrfCoordinator: ", vrfCoordinator);
         console2.log("On chainID: ", block.chainid);
 
-        vm.startBroadcast();
+        vm.startBroadcast(account);
         VRFCoordinatorV2_5Mock(vrfCoordinator).addConsumer(subID, consumer);
         vm.stopBroadcast();
         console2.log("Consumer added!");

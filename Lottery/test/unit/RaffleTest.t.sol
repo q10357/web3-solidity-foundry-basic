@@ -235,13 +235,20 @@ contract RaffleTest is Test, CodeConstants {
     /*//////////////////////////////////////////////////////////////
                            FULFILLRANDOMWORDS
     //////////////////////////////////////////////////////////////*/
+    // We cant use mock VRF coordinator unless local chain!
+    modifier skipFork() {
+        if (block.chainid != LOCAL_CHAIN_ID) {
+            return;
+        }
+        _;
+    }
     /**
      * Test that fulfillRandomWords can only be called after performUpkeep
      * NB: when specify parameters in test, Foundry will generate a random value
      */
     function testFulfillRandomWordsCanOnlyBeCalledAfterPerformUpkeep(uint256 randomRequestID)
         public
-        raffleEnteredAndTimePassed
+        skipFork raffleEnteredAndTimePassed
     {
         // Arrange in raffleEnteredAndTimePassed
         // Act / Assert
@@ -254,7 +261,7 @@ contract RaffleTest is Test, CodeConstants {
      * Test that fulfillRandomWords picks a winner, resets the raffle state, and sends the balance to the winner
      * The final stage of our raffle! With all conditions met, the winner is picked
      */
-    function testFulfillRandomWordsPicksAWinnerResetsAndSendsMoney() public raffleEnteredAndTimePassed {
+    function testFulfillRandomWordsPicksAWinnerResetsAndSendsMoney() public skipFork raffleEnteredAndTimePassed {
         // Arrange
         uint256 additionalEntrants = 3;
         uint256 startingIndex = 1;
@@ -285,8 +292,6 @@ contract RaffleTest is Test, CodeConstants {
         uint256 endingTimeStamp = raffle.getLastTimeStamp();
         uint256 prize = raffleEntranceFee * (additionalEntrants + 1);
 
-        console2.log("Winner: ", winner);
-        console2.log("expectedWinner: ", expectedWinner);
         assert(winner == expectedWinner);
         assert(rState == Raffle.RaffleState.OPEN); // RaffleState.OPEN
         assert(winnerBalance == startingBalance + prize);
