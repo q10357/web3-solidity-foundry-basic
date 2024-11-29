@@ -67,7 +67,7 @@ contract FundSubscription is Script, CodeConstants {
             // Usually, we would transfer LINK tokens from the deployer's wallet.
             vm.startBroadcast();
             VRFCoordinatorV2_5Mock(vrfCoordinator).fundSubscription(subID, FUND_AMOUNT);
-            // LinkToken(link).mint(address(this), FUND_AMOUNT);
+            LinkToken(link).mint(address(this), FUND_AMOUNT);
             vm.stopBroadcast();
         } else {
             // Actual LINK token (chainID is not local)

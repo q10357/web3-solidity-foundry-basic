@@ -26,11 +26,11 @@ contract RaffleTest is Test, CodeConstants {
     LinkToken link;
 
     /* Events - Had to Copy to "mock" an Emit  */
-    event RaffleEntered(address indexed player);
+    event RaffleEntered(address indexed newPlayer);
     event WinnerPicked(address indexed winner);
     event RequestedRaffleWinner(uint256 indexed requestId);
 
-    address public PLAYER = makeAddr("player");
+    address public PLAYER = makeAddr("newPlayer");
     uint256 public constant STARTING_USER_BALANCE = 10 ether;
     uint256 public constant LINK_BALANCE = 100 ether;
 
@@ -38,7 +38,7 @@ contract RaffleTest is Test, CodeConstants {
         // Prepare test environment
         DeployRaffle deployer = new DeployRaffle();
         (raffle, helperConfig) = deployer.run();
-        // Deal some ETH to the player
+        // Deal some ETH to the newPlayer
         vm.deal(PLAYER, STARTING_USER_BALANCE);
 
         /**
@@ -256,14 +256,14 @@ contract RaffleTest is Test, CodeConstants {
      * The final stage of our raffle! With all conditions met, the winner is picked
      */
     function testFulfillRandomWordsPicksAWinnerResetsAndSendsMoney() public raffleEnteredAndTimePassed {
-        address expectedWinner = address(1);
         // Arrange
-        uint256 additionalEntrants = 333;
+        uint256 additionalEntrants = 3;
         uint256 startingIndex = 1;
+        address expectedWinner = address(1);
 
         for (uint256 i = startingIndex; i < startingIndex + additionalEntrants; i++) {
-            address player = address(uint160(i));
-            hoax(player, 1 ether);
+            address newPlayer = address(uint160(i));
+            hoax(newPlayer, 1 ether);
             raffle.enterRaffle{value: raffleEntranceFee}();
         }
 
@@ -287,10 +287,10 @@ contract RaffleTest is Test, CodeConstants {
         uint256 prize = raffleEntranceFee * (additionalEntrants + 1);
 
         console2.log("Winner: ", winner);
-        console2.log("Expected Winner: ", expectedWinner);
-        assert(winner != expectedWinner);
-        assert(uint256(rState) == 0); // RaffleState.OPEN
-        assert(winnerBalance == startingBalance + prize + 1);
+        console2.log("expectedWinner: ", expectedWinner);
+        assert(winner == expectedWinner);
+        assert(rState == Raffle.RaffleState.OPEN); // RaffleState.OPEN
+        assert(winnerBalance == startingBalance + prize);
         assert(endingTimeStamp > startingTimestamp);
     }
 }

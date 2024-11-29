@@ -132,7 +132,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
             })
         );
 
-        emit RequestedRaffleWinner(requestId);
+        emit RequestedRaffleWinner(requestId); // Redundant
     }
 
     /**
