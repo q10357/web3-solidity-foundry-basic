@@ -21,6 +21,7 @@ contract DeployRaffle is Script {
             => Deploy Mock
         */
         HelperConfig helperConfig = new HelperConfig();
+        AddConsumer addConsumer = new AddConsumer();
         HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
 
         // If the subscriptionID is 0, we won't be able to call chainlink VRF (need to have valid subscription and added as consumer)
@@ -37,6 +38,7 @@ contract DeployRaffle is Script {
             );
             // We will add a consumer, but AFTER Raffle contract is deployed
             // This is because we need the (most recently deployed) Raffle contract address to add it as a consumer
+            helperConfig.setConfig(block.chainid, config);
         }
 
         // HelperConfig has all the values we need to deploy the raffle contract
@@ -51,7 +53,6 @@ contract DeployRaffle is Script {
         );
         vm.stopBroadcast();
 
-        AddConsumer addConsumer = new AddConsumer();
         addConsumer.addConsumer(
             config.vrfCoordinatorV2_5, config.subscriptionId, address(raffle), config.account
         );

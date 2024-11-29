@@ -33,8 +33,8 @@ contract CreateSubscription is Script {
         return (subID, vrfCoordinator);
     }
 
-    function run() public {
-        createSubscriptionUsingConfig();
+    function run() external returns (uint256, address) {
+        return createSubscriptionUsingConfig();
     }
 }
 
@@ -72,7 +72,7 @@ contract FundSubscription is Script, CodeConstants {
         console2.log("Subscription funded!");
     }
 
-    function run() public {
+    function run() external {
         fundSubscriptionUsingConfig();
     }
 }

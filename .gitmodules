@@ -1,0 +1,12 @@
+[submodule "Lottery/lib/foundry-devops"]
+	path = Lottery/lib/foundry-devops
+	url = https://github.com/cyfrin/foundry-devops
+[submodule "Lottery/lib/chainlink-brownie-contracts"]
+	path = Lottery/lib/chainlink-brownie-contracts
+	url = https://github.com/smartcontractkit/chainlink-brownie-contracts
+[submodule "Lottery/lib/forge-std"]
+	path = Lottery/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
+[submodule "Lottery/lib/solmate"]
+	path = Lottery/lib/solmate
+	url = https://github.com/transmissions11/solmate

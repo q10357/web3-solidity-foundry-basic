@@ -143,9 +143,9 @@ contract HelperConfig is CodeConstants, Script {
         // These are defined in the CodeConstants contract above
         VRFCoordinatorV2_5Mock vrfCoordinatorV2_5Mock =
             new VRFCoordinatorV2_5Mock(MOCK_BASE_FEE, MOCK_GAS_PRICE_LINK, MOCK_WEI_PER_UINT_LINK);
+        LinkToken linkToken = new LinkToken();
         uint256 mockSubId = vrfCoordinatorV2_5Mock.createSubscription();
         // LinkToken is a mock contract, used to simulate LINK token (since we are on a local network, in reality we would use the real LINK token)
-        LinkToken linkToken = new LinkToken();
         vm.stopBroadcast();
 
         localNetworkConfig = NetworkConfig({
@@ -160,7 +160,7 @@ contract HelperConfig is CodeConstants, Script {
         });
         console2.log("Raffle Config Subscription ID:", localNetworkConfig.subscriptionId);
 
-        //vm.deal(localNetworkConfig.account, 100 ether);
+        vm.deal(localNetworkConfig.account, 100 ether);
         return localNetworkConfig;
     }
 }
