@@ -16,17 +16,17 @@ contract CreateSubscription is Script {
         address vrfCoordinatorAddr = helperConfig.getConfig().vrfCoordinatorV2_5;
         // Fetching the subscription ID from the current network configuration.
         // This ID is required to link the VRF subscription for randomness requests.
-        (uint256 subID,) = createSubscription(vrfCoordinatorAddr);
+        (uint256 subID,) = createSubscription(vrfCoordinatorAddr, helperConfig.getConfig().account);
 
         return (subID, vrfCoordinatorAddr);
     }
 
-    function createSubscription(address vrfCoordinator) public returns (uint256, address) {
+    function createSubscription(address vrfCoordinator, address account) public returns (uint256, address) {
         // Create Subscription
         console2.log("Creating subscription on chain ID: ", block.chainid);
-        vm.startBroadcast();
+        vm.startBroadcast(account);
         uint256 subID = VRFCoordinatorV2_5Mock(vrfCoordinator).createSubscription();
-
+        vm.stopBroadcast();
         console2.log("Your subscription ID: ", subID);
         console2.log("Update the subscription ID in HelperConfig.s.sol:");
 
@@ -46,16 +46,12 @@ contract FundSubscription is Script, CodeConstants {
 
     function fundSubscriptionUsingConfig() public {
         HelperConfig helperConfig = new HelperConfig();
-        address vrfCoordinatorAddr = helperConfig.getConfig().vrfCoordinatorV2_5;
-        uint256 subscriptionID = helperConfig.getConfig().subscriptionId;
-        // Fetching the LINK token contract address (mock on local, actual on live networks).
-        // This address is needed to interact with the LINK token, such as funding the subscription.
-        address linkToken = helperConfig.getConfig().link;
+        HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
 
-        fundSubscription(vrfCoordinatorAddr, subscriptionID, linkToken);
+        fundSubscription(config.vrfCoordinatorV2_5, config.subscriptionId, config.link, config.account);
     }
 
-    function fundSubscription(address vrfCoordinator, uint256 subID, address link) public {
+    function fundSubscription(address vrfCoordinator, uint256 subID, address link, address account) public {
         // Fund Subscription
         console2.log("Funding subscription: ", subID);
         console2.log("Using vrfCoordinator: ", subID);
@@ -63,15 +59,13 @@ contract FundSubscription is Script, CodeConstants {
 
         // NB: We can refer to value LOCAL_CHAIN_ID since we inherit CodeConstants
         if (block.chainid == LOCAL_CHAIN_ID) {
-            // We can mint LINK tokens because of it being a mock on local/ test network)
-            // Usually, we would transfer LINK tokens from the deployer's wallet.
-            vm.startBroadcast();
+            // Mock LINK token (chainID is local)
+            vm.startBroadcast(account);
             VRFCoordinatorV2_5Mock(vrfCoordinator).fundSubscription(subID, FUND_AMOUNT);
-            LinkToken(link).mint(address(this), FUND_AMOUNT);
             vm.stopBroadcast();
         } else {
             // Actual LINK token (chainID is not local)
-            vm.startBroadcast();
+            vm.startBroadcast(account);
             LinkToken(link).transferAndCall(vrfCoordinator, FUND_AMOUNT, abi.encode(subID));
             vm.stopBroadcast();
         }
@@ -95,14 +89,14 @@ contract AddConsumer is Script {
      */
     function addConsumerUsingConfig(address consumerAddr) public {
         HelperConfig helperConfig = new HelperConfig();
-        address vrfCoordinatorAddr = helperConfig.getConfig().vrfCoordinatorV2_5;
-        uint256 subscriptionID = helperConfig.getConfig().subscriptionId;
-        address linkToken = helperConfig.getConfig().link;
+        HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
 
-        addConsumer(vrfCoordinatorAddr, subscriptionID, linkToken, consumerAddr);
+        addConsumer(config.vrfCoordinatorV2_5, config.subscriptionId, config.link, consumerAddr, config.account);
     }
 
-    function addConsumer(address vrfCoordinator, uint256 subID, address link, address consumer) public {
+    function addConsumer(address vrfCoordinator, uint256 subID, address link, address consumer, address account)
+        public
+    {
         console2.log("Adding consumer: ", consumer);
         console2.log("To subscription: ", subID);
         console2.log("Using vrfCoordinator: ", vrfCoordinator);

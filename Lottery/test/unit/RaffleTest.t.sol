@@ -40,7 +40,6 @@ contract RaffleTest is Test, CodeConstants {
         (raffle, helperConfig) = deployer.run();
         // Deal some ETH to the newPlayer
         vm.deal(PLAYER, STARTING_USER_BALANCE);
-
         /**
          * Our Raffle contract needs the specified parameters to be initiated
          * We can get these parameters from the HelperConfig contract
@@ -55,7 +54,7 @@ contract RaffleTest is Test, CodeConstants {
         link = LinkToken(config.link);
 
         vm.startPrank(msg.sender);
-        if(block.chainid == LOCAL_CHAIN_ID) {
+        if (block.chainid == LOCAL_CHAIN_ID) {
             //Mint some LINK tokens to the Raffle contract if local chain (for testing)
             link.mint(address(raffle), LINK_BALANCE);
             VRFCoordinatorV2_5Mock(vrfCoordinatorV2_5).fundSubscription(subscriptionId, LINK_BALANCE);

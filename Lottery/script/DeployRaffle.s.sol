@@ -29,15 +29,18 @@ contract DeployRaffle is Script {
             // create subscription
             CreateSubscription createSubscription = new CreateSubscription();
             (config.subscriptionId, config.vrfCoordinatorV2_5) =
-                createSubscription.createSubscription(config.vrfCoordinatorV2_5);
+                createSubscription.createSubscription(config.vrfCoordinatorV2_5, config.account);
             // Next => Fund it!
             FundSubscription fundSubscription = new FundSubscription();
-            fundSubscription.fundSubscription(config.vrfCoordinatorV2_5, config.subscriptionId, config.link);
+            fundSubscription.fundSubscription(
+                config.vrfCoordinatorV2_5, config.subscriptionId, config.link, config.account
+            );
             // We will add a consumer, but AFTER Raffle contract is deployed
             // This is because we need the (most recently deployed) Raffle contract address to add it as a consumer
         }
 
         // HelperConfig has all the values we need to deploy the raffle contract
+        vm.startBroadcast(config.account);
         Raffle raffle = new Raffle(
             config.subscriptionId,
             config.gasLane,
@@ -46,9 +49,12 @@ contract DeployRaffle is Script {
             config.entranceFee,
             config.interval
         );
+        vm.stopBroadcast();
 
         AddConsumer addConsumer = new AddConsumer();
-        addConsumer.addConsumer(config.vrfCoordinatorV2_5, config.subscriptionId, config.link, address(raffle));
+        addConsumer.addConsumer(
+            config.vrfCoordinatorV2_5, config.subscriptionId, config.link, address(raffle), config.account
+        );
 
         return (raffle, helperConfig);
     }

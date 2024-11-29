@@ -16,8 +16,11 @@ abstract contract CodeConstants {
     /* VRF Coordinator Mock Values */
     uint96 public MOCK_BASE_FEE = 0.25 ether;
     uint96 public MOCK_GAS_PRICE_LINK = 1e9;
-    // LINK / ETH price
+    // LINK / ETH price (outdateddd)
     int256 public MOCK_WEI_PER_UINT_LINK = 4e15;
+
+    // Default sender address for foundry, used for local testing
+    address public FOUNDRY_DEFAULT_SENDER = 0x1804c8AB1F12E6bbf3894d4083f33e07309d1f38;
 
     /* Chain IDs */
     uint256 public constant ETH_MAINNET_CHAIN_ID = 1;
@@ -40,6 +43,7 @@ contract HelperConfig is CodeConstants, Script {
         address vrfCoordinatorV2_5;
         uint32 callbackGasLimit;
         address link;
+        address account;
         // Raffle specific
         uint256 entranceFee;
         uint256 interval;
@@ -93,7 +97,9 @@ contract HelperConfig is CodeConstants, Script {
             gasLane: 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae,
             callbackGasLimit: 500000,
             subscriptionId: 0,
-            link: 0x779877A7B0D9E8603169DdbD7836e478b4624789
+            link: 0x779877A7B0D9E8603169DdbD7836e478b4624789,
+            // Burner wallet
+            account: 0xcFc24B244340e786E1e9c29834Ef95ab524ADB6b
         });
     }
 
@@ -109,7 +115,9 @@ contract HelperConfig is CodeConstants, Script {
             gasLane: 0x3fd2fec10d06ee8f65e7f2e95f5c56511359ece3f33960ad8a866ae24a8ff10b,
             callbackGasLimit: 500000,
             subscriptionId: 1,
-            link: 0x514910771AF9Ca656af840dff83E8264EcF986CA
+            link: 0x514910771AF9Ca656af840dff83E8264EcF986CA,
+            // Burner wallet
+            account: 0xcFc24B244340e786E1e9c29834Ef95ab524ADB6b
         });
     }
 
@@ -146,6 +154,7 @@ contract HelperConfig is CodeConstants, Script {
             vrfCoordinatorV2_5: address(vrfCoordinatorV2_5Mock),
             callbackGasLimit: 500000,
             link: address(linkToken),
+            account: FOUNDRY_DEFAULT_SENDER,
             entranceFee: 0.01 ether,
             interval: 30 // in seconds, specified in raffle contract
         });
