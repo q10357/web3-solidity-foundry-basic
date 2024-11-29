@@ -96,7 +96,7 @@ contract HelperConfig is CodeConstants, Script {
             vrfCoordinatorV2_5: 0x9DdfaCa8183c41ad55329BdeeD9F6A8d53168B1B,
             gasLane: 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae,
             callbackGasLimit: 500000,
-            subscriptionId: 0,
+            subscriptionId: 37411059905807448069533203840042138330036239152826530541431475750942888618537,
             link: 0x779877A7B0D9E8603169DdbD7836e478b4624789,
             // Burner wallet
             account: 0xcFc24B244340e786E1e9c29834Ef95ab524ADB6b
