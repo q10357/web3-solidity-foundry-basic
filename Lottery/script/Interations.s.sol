@@ -42,7 +42,7 @@ contract CreateSubscription is Script {
  * Call this contract to fund  a chainlink subscription
  */
 contract FundSubscription is Script, CodeConstants {
-    uint256 public constant FUND_AMOUNT = 3 ether; // 3 LINK
+    uint256 public constant FUND_AMOUNT = 300 ether; // LINK
 
     function fundSubscriptionUsingConfig() public {
         HelperConfig helperConfig = new HelperConfig();
@@ -67,7 +67,7 @@ contract FundSubscription is Script, CodeConstants {
             // Usually, we would transfer LINK tokens from the deployer's wallet.
             vm.startBroadcast();
             VRFCoordinatorV2_5Mock(vrfCoordinator).fundSubscription(subID, FUND_AMOUNT);
-            LinkToken(link).mint(address(this), FUND_AMOUNT);
+            // LinkToken(link).mint(address(this), FUND_AMOUNT);
             vm.stopBroadcast();
         } else {
             // Actual LINK token (chainID is not local)

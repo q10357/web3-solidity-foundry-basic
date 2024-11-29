@@ -10,6 +10,7 @@ import {Raffle} from "src/Raffle.sol";
 import {DeployRaffle} from "script/DeployRaffle.s.sol";
 import {HelperConfig} from "script/HelperConfig.s.sol";
 import {CodeConstants} from "script/HelperConfig.s.sol";
+import {LinkToken} from "test/mocks/LinkToken.sol";
 
 // CodeConstants are defined in HelperConfig.s.sol
 contract RaffleTest is Test, CodeConstants {
@@ -22,6 +23,7 @@ contract RaffleTest is Test, CodeConstants {
     uint256 raffleEntranceFee;
     uint32 callbackGasLimit;
     address vrfCoordinatorV2_5;
+    LinkToken link;
 
     /* Events - Had to Copy to "mock" an Emit  */
     event RaffleEntered(address indexed player);
@@ -36,6 +38,8 @@ contract RaffleTest is Test, CodeConstants {
         // Prepare test environment
         DeployRaffle deployer = new DeployRaffle();
         (raffle, helperConfig) = deployer.run();
+        // Deal some ETH to the player
+        vm.deal(PLAYER, STARTING_USER_BALANCE);
 
         /**
          * Our Raffle contract needs the specified parameters to be initiated
@@ -48,9 +52,16 @@ contract RaffleTest is Test, CodeConstants {
         vrfCoordinatorV2_5 = config.vrfCoordinatorV2_5;
         raffleEntranceFee = config.entranceFee;
         raffleInterval = config.interval;
+        link = LinkToken(config.link);
 
-        // Deal some ETH to the player
-        vm.deal(PLAYER, STARTING_USER_BALANCE);
+        vm.startPrank(msg.sender);
+        if(block.chainid == LOCAL_CHAIN_ID) {
+            //Mint some LINK tokens to the Raffle contract if local chain (for testing)
+            link.mint(address(raffle), LINK_BALANCE);
+            VRFCoordinatorV2_5Mock(vrfCoordinatorV2_5).fundSubscription(subscriptionId, LINK_BALANCE);
+        }
+        link.approve(vrfCoordinatorV2_5, LINK_BALANCE);
+        vm.stopPrank();
     }
 
     modifier raffleEnteredAndTimePassed() {
@@ -215,11 +226,7 @@ contract RaffleTest is Test, CodeConstants {
         vm.recordLogs();
         raffle.performUpkeep(""); // emits requestID
         Vm.Log[] memory entries = vm.getRecordedLogs();
-        bytes32 requestID = entries[0].topics[1];
-        for (uint256 i = 0; i < entries[0].topics.length; i++) {
-            console2.log("Topic Index:", i);
-            console2.logBytes32(entries[0].topics[1]); // Log each topic
-        }
+        bytes32 requestID = entries[1].topics[1];
         // Assert
         Raffle.RaffleState rState = raffle.getRaffleState();
         assert(rState == Raffle.RaffleState.CALCULATING);
@@ -231,12 +238,59 @@ contract RaffleTest is Test, CodeConstants {
     //////////////////////////////////////////////////////////////*/
     /**
      * Test that fulfillRandomWords can only be called after performUpkeep
+     * NB: when specify parameters in test, Foundry will generate a random value
      */
-    function testFulfillRandomWordsCanOnlyBeCalledAfterPerformUpkeep(uint256 randomRequestID) public raffleEnteredAndTimePassed {
+    function testFulfillRandomWordsCanOnlyBeCalledAfterPerformUpkeep(uint256 randomRequestID)
+        public
+        raffleEnteredAndTimePassed
+    {
         // Arrange in raffleEnteredAndTimePassed
         // Act / Assert
         vm.expectRevert(VRFCoordinatorV2_5Mock.InvalidRequest.selector);
         // vm.mockCall could be used here...
         VRFCoordinatorV2_5Mock(vrfCoordinatorV2_5).fulfillRandomWords(randomRequestID, address(raffle));
+    }
+
+    /**
+     * Test that fulfillRandomWords picks a winner, resets the raffle state, and sends the balance to the winner
+     * The final stage of our raffle! With all conditions met, the winner is picked
+     */
+    function testFulfillRandomWordsPicksAWinnerResetsAndSendsMoney() public raffleEnteredAndTimePassed {
+        address expectedWinner = address(1);
+        // Arrange
+        uint256 additionalEntrants = 333;
+        uint256 startingIndex = 1;
+
+        for (uint256 i = startingIndex; i < startingIndex + additionalEntrants; i++) {
+            address player = address(uint160(i));
+            hoax(player, 1 ether);
+            raffle.enterRaffle{value: raffleEntranceFee}();
+        }
+
+        uint256 startingTimestamp = raffle.getLastTimeStamp();
+        uint256 startingBalance = expectedWinner.balance;
+
+        // Act
+        vm.recordLogs();
+        raffle.performUpkeep(""); // emits requestId
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        bytes32 requestId = entries[1].topics[1];
+
+        // Pretend to be Chainlink VRF
+        VRFCoordinatorV2_5Mock(vrfCoordinatorV2_5).fulfillRandomWords(uint256(requestId), address(raffle));
+
+        // Assert
+        address winner = raffle.getRecentWinner();
+        Raffle.RaffleState rState = raffle.getRaffleState();
+        uint256 winnerBalance = winner.balance;
+        uint256 endingTimeStamp = raffle.getLastTimeStamp();
+        uint256 prize = raffleEntranceFee * (additionalEntrants + 1);
+
+        console2.log("Winner: ", winner);
+        console2.log("Expected Winner: ", expectedWinner);
+        assert(winner != expectedWinner);
+        assert(uint256(rState) == 0); // RaffleState.OPEN
+        assert(winnerBalance == startingBalance + prize + 1);
+        assert(endingTimeStamp > startingTimestamp);
     }
 }
